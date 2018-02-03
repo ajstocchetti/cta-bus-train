@@ -1,13 +1,11 @@
-require('dotenv').config();
 const request = require('request');
 const moment = require('moment');
-
-const myStops = process.env.BUS_STOPS.split(',');
 
 module.exports = {
   myStopInfo,
 };
 
+const myStops = process.env.BUS_STOPS.split(',');
 const baseUrl = 'http://www.ctabustracker.com/bustime/api/v2/';
 const busKey = process.env.BUSKEY;
 

@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const lusca = require('lusca');
 
 const bustime = require('./bustime');
+const trains = require('./trains');
 
 
 // Create Express server.
@@ -38,6 +39,11 @@ app.get('/api/init', (req, res) => {
 });
 app.get('/api/bus', function(req, res) {
   return bustime.myStopInfo().then(resp => {
+    return res.json(resp);
+  });
+});
+app.get('/api/trains', function(req, res) {
+  return trains.myStopInfo().then(resp => {
     return res.json(resp);
   });
 });

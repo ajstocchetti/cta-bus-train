@@ -68,7 +68,8 @@
           L.popup().setLatLng(e.latlng).setContent('Home').openOn(map);
         }).addTo(map);
 
-        pollAndAdd();
+        updateBusses();
+        updateTrains();
       }
 
 
@@ -106,7 +107,7 @@
       // });
 
 
-      function pollAndAdd() {
+      function updateBusses() {
         $.ajax({
           url: "/api/bus",
           context: document.body
@@ -137,6 +138,7 @@
         var text = `Route ${vehicle.rt} to ${vehicle.stpnm} (${vehicle.rtdir})`;
         if (vehicle.dly) text += 'Vehicle is delayed.';
         text += `Arrives at ${vehicle.ts}`;
+        text += `.  Heading: ${vehicle.hdg}`
 
         marker.on('mouseover', function(e) {
           //open popup;
@@ -148,6 +150,30 @@
 
         busses.push(marker);
         marker.addTo(map);
+      }
+
+
+      function updateTrains() {
+        $.ajax({
+          url: "/api/trains",
+          context: document.body
+        }).done(function(resp) {
+          console.log(resp);
+          // busses.forEach(function(marker) {
+          //   map.removeLayer(marker);
+          // });
+          // busses.length = 0;
+          // for (vId in resp) {
+          //   addToBusses(resp[vId]);
+          // }
+          //
+          // // adjust zoom
+          // map.fitBounds(L.featureGroup(busses).getBounds());
+        }).error(function(req, status, err) {
+          console.log('error in ajax');
+          console.log(status);
+          console.log(err);
+        });
       }
     </script>
 </body>
