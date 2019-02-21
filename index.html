@@ -9,6 +9,7 @@
     <script src="jquery-ajax.min.js"></script>
     <link rel="stylesheet" href="leaflet/leaflet.css" />
     <script src="leaflet/leaflet.js"></script>
+    <script src="configs.js"></script>
     <style>
         body {
             margin: 0;
@@ -27,28 +28,24 @@
     <div id='map'></div>
 
     <script>
-      var busses = [];
-      var map; // declare map here because its used by everything
 
-      (function init() {
-        $.ajax({
-          url: "/api/init",
-          context: document.body
-        }).done(function(resp) {
-          initMap(resp.home);
-        }).error(function(req, status, err) {
-          console.error('Unable to initialize map');
-          console.log(status);
-          console.log(err);
-        });
-      })();
+    window.onload = function() {
+      window.cta_config = window.cta_config || {};
+      if (!Array.isArray(window.cta_config.busses)) window.cta_config.busses = [];
+      initMap(window.cta_config.home);
 
+      setInterval(updateBusses, 15000);
+      updateBusses();
+      // updateTrains();
+    }
 
       function initMap(homeCoords) {
+        if (!homeCoords) homeCoords = [41.8781, -87.6298]; // Chicago
         map = L.map('map', {
           center: homeCoords,
           zoom: 16
         });
+        window.cta_config.map = map;
 
         var Esri_WorldStreetMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
@@ -67,11 +64,6 @@
         home.on('mouseover', function(e) {
           L.popup().setLatLng(e.latlng).setContent('Home').openOn(map);
         }).addTo(map);
-
-        setInterval(updateBusses, 15000);
-
-        updateBusses();
-        // updateTrains();
       }
 
 
@@ -111,6 +103,8 @@
 
       function updateBusses() {
         console.log('updating busses');
+        var map = window.cta_config.map;
+        var busses = window.cta_config.busses;
         $.ajax({
           url: "/api/bus",
           context: document.body
@@ -133,6 +127,7 @@
       }
 
       function addToBusses(vehicle) {
+        var map = window.cta_config.map;
         var angle = (Math.round(vehicle.hdg / 5) * 5) % 360; // wrap 360 back to 0
         var marker = L.marker([ vehicle.lat, vehicle.lon], {
           icon: L.icon({
@@ -152,12 +147,12 @@
            .openOn(map);
         });
 
-        busses.push(marker);
+        window.cta_config.busses.push(marker);
         marker.addTo(map);
       }
 
-
       function updateTrains() {
+        var map = window.cta_config.map;
         $.ajax({
           url: "/api/trains",
           context: document.body

@@ -1,4 +1,5 @@
 .env
+public/configs.js
 
 node_modules
 npm-debug.log
