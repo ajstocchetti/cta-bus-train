@@ -37,6 +37,28 @@ async function getBusInfo(type, params) {
     return JSON.parse(response)['bustime-response'];
 }
 
+async function getPredictions(stopIds) {
+  if (!stopIds || !stopIds.length) return [];
+
+  const predictions = await getBusInfo('getpredictions', { stpid: stopIds.join() });
+  if (predictions.error) {
+    console.log(`Error getting bus predictions for ${stopIds}`);
+    console.log(predictions.error);
+  }
+  return predictions.prd || [];
+}
+
+async function getVehicles(vehicleIds) {
+  if (!vehicleIds || !vehicleIds.length) return [];
+
+  const vehicles = await getBusInfo('getvehicles', {vid: vehicleIds.join()});
+  if (vehicles.error) {
+    console.log(`Error getting bus vehicles for ${vehicleIds}`);
+    console.log(vehicles.error);
+  }
+  return vehicles.vehicle || [];
+}
+
 
 async function getVehiclesForStops(stopIds) {
   const response = {};
@@ -58,36 +80,28 @@ async function getVBySFromCTA(stopIds) {
   const vehiclesByStop = {}; // initiate here
   if (!stopIds || !stopIds.length) return vehiclesByStop;
 
-  const predictions = await getBusInfo('getpredictions', { stpid: stopIds.join() });
-  if (predictions.error) {
-    console.log(`Error getting bus predictions for ${stopIds}`);
-    console.log(predictions.error);
-  }
-
+  // Step 1: lookup predictions of when busses will arrive at the stop
+  const predictions = await getPredictions(stopIds);
   const mapper = {};
-  const vIds = predictions.prd.map(p => {
+  const vIds = predictions.map(p => {
     // loop through predictions once
-    // setting the inverse lookup object
+    // setting the inverse lookup object (vid -> prediction)
     // initializing the array on the return object
     // and finally mapping out the vehicle id
     vehiclesByStop[p.stpid] = []; // initialize empty array on the return object
-    mapper[p.vid] = p.stpid;
+    p.ts = moment(p.prdtm, 'YYYYMMDD HH:mm').toISOString(); // will have to convert this to central at some point
+    mapper[p.vid] = p;
     return p.vid;
   });
 
-  const vehicles = await getBusInfo('getvehicles', {vid: vIds.join()});
-  if (vehicles.error) {
-    console.log(`Error getting bus vehicles for ${vIds}`);
-    console.log(vehicles.error);
-  }
-
+  // Step 2: lookup the vehicle for each prediction
+  const vehicles = await getVehicles(vIds);
   // map vehicles back to thier stop id
-  vehicles.vehicle.forEach(v => {
-    const stopId = mapper[v.vid];
-    if (!stopId) console.log(`no stop id in mapper for ${v.vid}`);
-    vehiclesByStop[stopId].push(v);
+  vehicles.forEach(v => {
+    const prediction = mapper[v.vid];
+    if (!prediction) return console.log(`no prediction in mapper for ${v.vid}`);
+    vehiclesByStop[prediction.stpid].push({veh: v, pred: prediction});
   });
-
   cache.cacheVehiclesForStops(vehiclesByStop);
   return vehiclesByStop;
 }

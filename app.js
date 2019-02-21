@@ -6,7 +6,7 @@ const bustime = require('./bustime');
 const trains = require('./trains');
 
 const sendJson = res => data => res.json(data);
-
+const sendFail = res => error => res.status(500).json({error: error.toString()});
 
 // Create Express server.
 const app = express();
@@ -37,7 +37,8 @@ app.get('/api/bus', function(req, res) {
     return res.status(400).json({error: 'Missing required property "stops"'});
   }
   return bustime.getVehiclesForStops(req.query.stops.split(','))
-  .then(sendJson(res));
+  .then(sendJson(res))
+  .catch(sendFail(res));
 });
 // app.get('/api/trains', function(req, res) {
 //   return trains.myStopInfo(req.query.stops.split(',')).then(sendJson(res));

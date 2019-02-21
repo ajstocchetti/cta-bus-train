@@ -109,25 +109,29 @@
         $.ajax({
           url: `/api/bus?stops=${busStops}`,
           context: document.body
-        }).done(function(resp) {
+        })
+        .done(function(resp) {
           busses.forEach(function(marker) {
             map.removeLayer(marker);
           });
           busses.length = 0;
-          for (vId in resp) {
-            addToBusses(resp[vId]);
-          }
+          Object.keys(resp).forEach(stopId => {
+            resp[stopId].forEach(veh => addToBusses(veh));
+          });
 
           // adjust zoom
           map.fitBounds(L.featureGroup(busses).getBounds());
-        }).error(function(req, status, err) {
+        })
+        .error(function(req, status, err) {
           console.log('error in ajax');
           console.log(status);
           console.log(err);
         });
       }
 
-      function addToBusses(vehicle) {
+      function addToBusses(vpData) {
+        var vehicle = vpData.veh;
+        var pred = vpData.pred;
         var map = window.cta_config.map;
         var angle = (Math.round(vehicle.hdg / 5) * 5) % 360; // wrap 360 back to 0
         var marker = L.marker([ vehicle.lat, vehicle.lon], {
@@ -135,9 +139,9 @@
             iconUrl: `/icons/bus-${angle}.png`
           })
         });
-        var text = `Route ${vehicle.rt} to ${vehicle.stpnm} (${vehicle.rtdir})`;
+        var text = `Route ${vehicle.rt} to ${pred.stpnm} (${pred.rtdir})`;
         if (vehicle.dly) text += 'Vehicle is delayed.';
-        text += `Arrives at ${vehicle.ts}`;
+        text += `Arrives at ${pred.ts}`;
         text += `.  Heading: ${vehicle.hdg}`
 
         marker.on('mouseover', function(e) {
