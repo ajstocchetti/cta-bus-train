@@ -3,10 +3,9 @@ const request = require('request');
 const moment = require('moment');
 
 module.exports = {
-  myStopInfo,
+  getVehiclesForStops,
 };
 
-const myStops = process.env.BUS_STOPS.split(',');
 const baseUrl = 'http://www.ctabustracker.com/bustime/api/v2';
 const busKey = process.env.BUSKEY;
 
@@ -30,11 +29,11 @@ function getBusInfo(type, params) {
 }
 
 
-function myStopInfo() {
+function getVehiclesForStops(stopIds=[]) {
   let predictions, vehicles;
   const errors = {};
 
-  return getPredictions(myStops)
+  return getPredictions(stopIds)
   .then(resp => {
     predictions = resp.prd;
     if (resp.error) errors.predictions = resp.error;
@@ -49,8 +48,8 @@ function myStopInfo() {
 }
 
 
-function getPredictions(preds) {
-  return getBusInfo('getpredictions', { stpid: preds.join() })
+function getPredictions(stopIds) {
+  return getBusInfo('getpredictions', { stpid: stopIds.join() })
   .catch(err => {
     console.log('error getting predictions');
     console.log(err);

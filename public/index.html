@@ -105,8 +105,9 @@
         console.log('updating busses');
         var map = window.cta_config.map;
         var busses = window.cta_config.busses;
+        var busStops = window.cta_config.busStops || [];
         $.ajax({
-          url: "/api/bus",
+          url: `/api/bus?stops=${busStops}`,
           context: document.body
         }).done(function(resp) {
           busses.forEach(function(marker) {
