@@ -68,8 +68,10 @@
           L.popup().setLatLng(e.latlng).setContent('Home').openOn(map);
         }).addTo(map);
 
+        setInterval(updateBusses, 15000);
+
         updateBusses();
-        updateTrains();
+        // updateTrains();
       }
 
 
@@ -108,6 +110,7 @@
 
 
       function updateBusses() {
+        console.log('updating busses');
         $.ajax({
           url: "/api/bus",
           context: document.body
@@ -130,9 +133,10 @@
       }
 
       function addToBusses(vehicle) {
+        var angle = (Math.round(vehicle.hdg / 5) * 5) % 360; // wrap 360 back to 0
         var marker = L.marker([ vehicle.lat, vehicle.lon], {
           icon: L.icon({
-            iconUrl: `/icons/bus-${Math.round(vehicle.hdg / 5) * 5}.png`
+            iconUrl: `/icons/bus-${angle}.png`
           })
         });
         var text = `Route ${vehicle.rt} to ${vehicle.stpnm} (${vehicle.rtdir})`;

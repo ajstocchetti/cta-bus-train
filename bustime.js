@@ -1,3 +1,4 @@
+const querystring = require('querystring');
 const request = require('request');
 const moment = require('moment');
 
@@ -6,31 +7,19 @@ module.exports = {
 };
 
 const myStops = process.env.BUS_STOPS.split(',');
-const baseUrl = 'http://www.ctabustracker.com/bustime/api/v2/';
+const baseUrl = 'http://www.ctabustracker.com/bustime/api/v2';
 const busKey = process.env.BUSKEY;
 
-function simplifyParams(obj) {
-  let base = {
+function paramsToQueryStr(obj = {}) {
+  return querystring.stringify({
     key: busKey,
     format: 'json',
-  };
-  if (obj && typeof obj === 'object') {
-    base = Object.assign(obj, base);
-  }
-
-  let params = '';
-  for (key in base) {
-    if (params) {
-      params += `&${key}=${base[key]}`;
-    } else {
-      params += `?${key}=${base[key]}`;
-    }
-  }
-  return params;
+    ...obj,
+  });
 }
 
 function getBusInfo(type, params) {
-    const url = `${baseUrl}${type}${simplifyParams(params)}`;
+    const url = `${baseUrl}/${type}?${paramsToQueryStr(params)}`;
     return new Promise((resolve, reject) => {
       request(url, (error, response, body) => {
         if (error) reject(error);

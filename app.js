@@ -6,6 +6,8 @@ const lusca = require('lusca');
 const bustime = require('./bustime');
 const trains = require('./trains');
 
+const sendJson = res => data => res.json(data);
+
 
 // Create Express server.
 const app = express();
@@ -38,14 +40,10 @@ app.get('/api/init', (req, res) => {
   })
 });
 app.get('/api/bus', function(req, res) {
-  return bustime.myStopInfo().then(resp => {
-    return res.json(resp);
-  });
+  return bustime.myStopInfo().then(sendJson(res));
 });
 app.get('/api/trains', function(req, res) {
-  return trains.myStopInfo().then(resp => {
-    return res.json(resp);
-  });
+  return trains.myStopInfo().then(sendJson(res));
 });
 
 
