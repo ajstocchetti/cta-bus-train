@@ -33,6 +33,9 @@ app.get('/', function(req, res) {
 });
 
 app.get('/api/bus', function(req, res) {
+  if (!req.query.stops) {
+    return res.status(400).json({error: 'Missing required property "stops"'});
+  }
   return bustime.getVehiclesForStops(req.query.stops.split(','))
   .then(sendJson(res));
 });

@@ -1,13 +1,27 @@
 const querystring = require('querystring');
 const request = require('request');
 const moment = require('moment');
-
-module.exports = {
-  getVehiclesForStops,
-};
+const cache = require('./bus-cache');
 
 const baseUrl = 'http://www.ctabustracker.com/bustime/api/v2';
 const busKey = process.env.BUSKEY;
+
+module.exports = {
+  getVehiclesForStops,
+  paramsToQueryStr,
+  getBusInfo,
+  getVBySFromCTA,
+};
+
+async function rp(url) {
+  return new Promise((resolve, reject) => {
+    request(url, (error, response, body) => {
+      if (error) reject(error);
+      else if (response.statusCode > 399) reject(response);
+      else resolve(body);
+    });
+  });
+}
 
 function paramsToQueryStr(obj = {}) {
   return querystring.stringify({
@@ -17,74 +31,63 @@ function paramsToQueryStr(obj = {}) {
   });
 }
 
-function getBusInfo(type, params) {
+async function getBusInfo(type, params) {
     const url = `${baseUrl}/${type}?${paramsToQueryStr(params)}`;
-    return new Promise((resolve, reject) => {
-      request(url, (error, response, body) => {
-        if (error) reject(error);
-        else if (response.statusCode > 399) reject(response);
-        else resolve(JSON.parse(body)['bustime-response']);
-      });
-    });
+    const response = await rp(url);
+    return JSON.parse(response)['bustime-response'];
 }
 
 
-function getVehiclesForStops(stopIds=[]) {
-  let predictions, vehicles;
-  const errors = {};
+async function getVehiclesForStops(stopIds) {
+  const response = {};
 
-  return getPredictions(stopIds)
-  .then(resp => {
-    predictions = resp.prd;
-    if (resp.error) errors.predictions = resp.error;
-    return predictions.map(pred => pred.vid);
-  })
-  .then(getVehicles)
-  .then(resp => {
-    vehicles = resp.vehicle;
-    if (resp.error) errors.vehicles = resp.error;
-  }).then(() => cacheInfo(predictions, vehicles, errors))
-  .catch(err => console.log('Error doing work', err));
+  const toFetch = stopIds.filter(id => {
+    // check cache
+    const veh = cache.getVehiclesFromCache(id);
+    if (veh) response[id] = veh;
+    return !veh;
+  });
+
+  if (!toFetch.length) return response; // all cached
+
+  const fresh = await getVBySFromCTA(toFetch);
+  return {...response, ...fresh};
 }
 
+async function getVBySFromCTA(stopIds) {
+  const vehiclesByStop = {}; // initiate here
+  if (!stopIds || !stopIds.length) return vehiclesByStop;
 
-function getPredictions(stopIds) {
-  return getBusInfo('getpredictions', { stpid: stopIds.join() })
-  .catch(err => {
-    console.log('error getting predictions');
-    console.log(err);
-    throw err;
-  });
-}
+  const predictions = await getBusInfo('getpredictions', { stpid: stopIds.join() });
+  if (predictions.error) {
+    console.log(`Error getting bus predictions for ${stopIds}`);
+    console.log(predictions.error);
+  }
 
-function getVehicles(vIds) {
-  return getBusInfo('getvehicles', { vid: vIds.join() })
-  .catch(err => {
-    console.log('error getting vehicles');
-    console.log(err);
-    throw err;
-  });
-}
-
-function cacheInfo(predictions, vehicles, errors) {
-  const store = {};
-  predictions.forEach(pred => {
-    const id = pred.vid + ''; // coerce to string, just to be safe
-    store[id] = pred;
-
-    // will have to convert this to central when in prod
-    store[id].ts = moment(pred.prdtm, 'YYYYMMDD HH:mm').toISOString();
+  const mapper = {};
+  const vIds = predictions.prd.map(p => {
+    // loop through predictions once
+    // setting the inverse lookup object
+    // initializing the array on the return object
+    // and finally mapping out the vehicle id
+    vehiclesByStop[p.stpid] = []; // initialize empty array on the return object
+    mapper[p.vid] = p.stpid;
+    return p.vid;
   });
 
-  vehicles.forEach(veh => {
-    const id = veh.vid + '';
-    if (!store[id]) {
-      console.error(`Vehicle ${id} does not exist in store`);
-      return;
-    }
-    Object.assign(store[id], veh);
+  const vehicles = await getBusInfo('getvehicles', {vid: vIds.join()});
+  if (vehicles.error) {
+    console.log(`Error getting bus vehicles for ${vIds}`);
+    console.log(vehicles.error);
+  }
+
+  // map vehicles back to thier stop id
+  vehicles.vehicle.forEach(v => {
+    const stopId = mapper[v.vid];
+    if (!stopId) console.log(`no stop id in mapper for ${v.vid}`);
+    vehiclesByStop[stopId].push(v);
   });
-  console.log('errors');
-  console.log(errors);
-  return store;
+
+  cache.cacheVehiclesForStops(vehiclesByStop);
+  return vehiclesByStop;
 }
