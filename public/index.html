@@ -21,15 +21,44 @@
             bottom: 0;
             width: 100%;
         }
+        #controlbox {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          z-index: 1000;
+          padding: 10px;
+          background-color: grey;
+        }
+        #ctrl-resize {
+          float: right;
+        }
+        .hide {
+          display: none;
+        }
     </style>
 </head>
 
 <body>
     <div id='map'></div>
+    <div id='controlbox'>
+      <img id="ctrl-resize" src="icons/resize.png" alt="Toggle control pannel" height="32"/>
+      <div id="ctrl-items">
+        <ul>
+          <li>Auto-refresh</li>
+          <li>Auto-scroll</li>
+          <li>Busses</li>
+        </ul>
+      </div>
+    </div>
 
     <script>
 
     window.onload = function() {
+      // setup click handler for control pannel
+      $('#ctrl-resize').click(function() {
+        $("#ctrl-items").toggleClass('hide');
+      });
+
       window.cta_config = window.cta_config || {};
       if (!Array.isArray(window.cta_config.busses)) window.cta_config.busses = [];
       initMap(window.cta_config.home);
