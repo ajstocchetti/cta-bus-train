@@ -1,10 +1,6 @@
 window.onload = function() {
   // setup click handler for control pannel
-  window.cta_controller = {
-    autorefresh: true,
-    autopan: true,
-  };
-
+  window.cta_controller = {};
 
   // initialize click handlers
   $('#ctrl-resize').click(function() {
@@ -12,16 +8,23 @@ window.onload = function() {
   });
   $('#refreshcheck').click(function() {
     window.cta_controller.autorefresh = $('#refreshcheck').is(':checked');
+    if (window.cta_controller.autorefresh) {
+      window.cta_controller.autorefreshInterval = setInterval(updateBusses, 15000);
+    } else {
+      clearInterval(window.cta_controller.autorefreshInterval);
+      window.cta_controller.autorefreshInterval = null;
+    }
   });
-  $('#scrollcheck').click(function() {
-    window.cta_controller.autopan = $('#scrollcheck').is(':checked');
+  $('#pancheck').click(function() {
+    window.cta_controller.autopan = $('#pancheck').is(':checked');
   });
+  $('#refreshcheck').click();
+  $('#pancheck').click();
 
   window.cta_config = window.cta_config || {};
   if (!Array.isArray(window.cta_config.busses)) window.cta_config.busses = [];
   initMap(window.cta_config.home);
 
-  setInterval(updateBusses, 150000);
   updateBusses();
 }
 
