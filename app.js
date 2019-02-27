@@ -32,7 +32,20 @@ app.get('/', function(req, res) {
   res.sendFile(`${__dirname}/public/index.html`);
 });
 
-app.get('/api/bus', function(req, res) {
+app.get('/api/bus/routes', function(req, res) {
+  return bustime.getRoutes()
+  .then(sendJson(res))
+  .catch(sendFail(res));
+});
+
+app.get('/api/bus/routes/:routeId/stops/', function(req, res) {
+  // direction = [Northbound, Southbound, Eastbound, Westbound]
+  return bustime.getStopsByRoute(req.params.routeId)
+  .then(sendJson(res))
+  .catch(sendFail(res));
+});
+
+app.get('/api/bus/vehicles', function(req, res) {
   if (!req.query.stops) {
     return res.status(400).json({error: 'Missing required property "stops"'});
   }
@@ -40,6 +53,7 @@ app.get('/api/bus', function(req, res) {
   .then(sendJson(res))
   .catch(sendFail(res));
 });
+
 // app.get('/api/trains', function(req, res) {
 //   return trains.myStopInfo(req.query.stops.split(',')).then(sendJson(res));
 // });

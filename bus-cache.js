@@ -1,4 +1,5 @@
 const cache = {}; // in memory object
+const routes = [];
 /*
   cache = {
     stop_id_1: {
@@ -22,7 +23,11 @@ module.exports = {
   cacheVehiclesForStops,
   getCacheExpiration,
   getVehiclesFromCache,
+  cacheAllRoutes,
+  getAllRoutes,
 }
+
+/* Vehicle Info */
 
 function getCacheExpiration() {
   return Date.now() + 30000; // expire in 30 seconds
@@ -41,4 +46,18 @@ function getVehiclesFromCache(stopId) {
     return cache[stopId].vehicles;
   }
   return null;
+}
+
+/* Bus Routes */
+function cacheAllRoutes(theRoutes) {
+  clearAllRoutes();
+  theRoutes.forEach(r => routes.push(r));
+}
+
+function clearAllRoutes() {
+  routes.length = 0;
+}
+
+function getAllRoutes() {
+  return routes;
 }

@@ -99,7 +99,7 @@ function updateBusses() {
   var busses = window.cta_config.busses;
   var busStops = window.cta_config.busStops || [];
   $.ajax({
-    url: `/api/bus?stops=${busStops}`,
+    url: `/api/bus/vehicles?stops=${busStops}`,
     context: document.body
   })
   .done(function(resp) {

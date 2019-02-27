@@ -6,7 +6,15 @@ const cache = require('./bus-cache');
 const baseUrl = 'http://www.ctabustracker.com/bustime/api/v2';
 const busKey = process.env.BUSKEY;
 
+
+function promiseProps(obj) {
+  return Object.entries().map(([key, val]))
+  return Object.entries(([]))
+}
+
 module.exports = {
+  getRoutes,
+  getStopsByRoute,
   getVehiclesForStops,
   paramsToQueryStr,
   getBusInfo,
@@ -31,10 +39,40 @@ function paramsToQueryStr(obj = {}) {
   });
 }
 
+async function getRoutes() {
+  // const cached = cache.getAllRoutes();
+  // if (cached.length) return cached;
+  const routesResp = await getBusInfo('getroutes');
+  const allRoutes = routesResp.routes;
+  cache.cacheAllRoutes(allRoutes);
+  return allRoutes;
+  // TODO: log errors
+}
+
+async function getStops(rt, dir) {
+  const stopInfo = await getBusInfo('getstops', {rt, dir});
+  return stopInfo.stops;
+  // TODO: log errors
+}
+
+async function getStopsByRoute(routeId, dir) {
+  const dirs = await getBusInfo('getdirections', {rt: routeId});
+  const scopedDir = async (dir) => {
+    const stops = await getStops(routeId, dir);
+    return {dir, stops};
+  };
+
+  const x = await Promise.all(dirs.directions.map(dir => scopedDir(dir.dir)));
+  return x.reduce((o, d) => {
+    o[d.dir] = d.stops;
+    return o;
+  }, {});
+}
+
 async function getBusInfo(type, params) {
-    const url = `${baseUrl}/${type}?${paramsToQueryStr(params)}`;
-    const response = await rp(url);
-    return JSON.parse(response)['bustime-response'];
+  const url = `${baseUrl}/${type}?${paramsToQueryStr(params)}`;
+  const response = await rp(url);
+  return JSON.parse(response)['bustime-response'];
 }
 
 async function getPredictions(stopIds) {
