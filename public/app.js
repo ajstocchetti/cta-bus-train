@@ -1,6 +1,8 @@
 window.onload = function() {
   // setup click handler for control pannel
   window.cta_controller = {};
+  window.cta_config = window.cta_config || {};
+  if (!Array.isArray(window.cta_config.busses)) window.cta_config.busses = [];
 
   // initialize click handlers
   $('#ctrl-resize').click(function() {
@@ -9,6 +11,7 @@ window.onload = function() {
   $('#refreshcheck').click(function() {
     window.cta_controller.autorefresh = $('#refreshcheck').is(':checked');
     if (window.cta_controller.autorefresh) {
+      updateBusses();
       window.cta_controller.autorefreshInterval = setInterval(updateBusses, 15000);
     } else {
       clearInterval(window.cta_controller.autorefreshInterval);
@@ -18,14 +21,16 @@ window.onload = function() {
   $('#pancheck').click(function() {
     window.cta_controller.autopan = $('#pancheck').is(':checked');
   });
+  $('#routeInpt').on('change', function() {
+    console.log('in the change handler');
+    console.log($('#routeInpt').value);
+  });
+
+  initMap(window.cta_config.home);
+  // trigger initial clicks
   $('#refreshcheck').click();
   $('#pancheck').click();
-
-  window.cta_config = window.cta_config || {};
-  if (!Array.isArray(window.cta_config.busses)) window.cta_config.busses = [];
-  initMap(window.cta_config.home);
-
-  updateBusses();
+  loadRoutes();
 }
 
 function initMap(homeCoords) {
@@ -148,4 +153,17 @@ function addToBusses(vpData) {
 
   window.cta_config.busses.push(marker);
   marker.addTo(map);
+}
+
+function loadRoutes() {
+  $.ajax({
+    url: '/api/bus/routes',
+    context: document.body
+  })
+  .done(function(routes) {
+    window.cta_config.all_routes = routes;
+  })
+  .error(function(req, status, err) {
+    console.log('Error loading routes', status, err);
+  });
 }

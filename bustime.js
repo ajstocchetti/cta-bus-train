@@ -6,12 +6,6 @@ const cache = require('./bus-cache');
 const baseUrl = 'http://www.ctabustracker.com/bustime/api/v2';
 const busKey = process.env.BUSKEY;
 
-
-function promiseProps(obj) {
-  return Object.entries().map(([key, val]))
-  return Object.entries(([]))
-}
-
 module.exports = {
   getRoutes,
   getStopsByRoute,
