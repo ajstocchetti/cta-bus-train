@@ -47,7 +47,7 @@ function initMap(homeCoords) {
   Esri_WorldStreetMap.addTo(map);
 
   if (homeCoords) {
-    var home = L.marker(homeCoords, {
+    window.cta_config.home_marker = L.marker(homeCoords, {
       // title: 'home',
       riseOnHover: true,
       icon: L.icon({
@@ -55,11 +55,11 @@ function initMap(homeCoords) {
         iconSize: [30, 37],
         iconAnchor: [15, 30],
       })
-    });
-    home.on('mouseover', function(e) {
-      L.popup().setLatLng(e.latlng).setContent('Home').openOn(map);
-    }).addTo(map);
-    window.cta_config.home_marker = home;
+    })
+    // .on('mouseover', function(e) {
+    //   L.popup().setLatLng(e.latlng).setContent('Home').openOn(map)
+    // })
+    .addTo(map);
   }
 }
 
@@ -138,10 +138,12 @@ function addToBusses(vpData) {
       iconUrl: `/icons/bus-${angle}.png`
     })
   });
-  var text = `Route ${vehicle.rt} to ${pred.stpnm} (${pred.rtdir})`;
-  if (vehicle.dly) text += 'Vehicle is delayed.';
-  text += `Arrives at ${pred.ts}`;
-  text += `.  Heading: ${vehicle.hdg}`
+  var text = `Route ${vehicle.rt} [${pred.rtdir}] to ${pred.stpnm}
+  <br>
+  ${vehicle.dly ? 'Vehicle is delayed.<br>' : ''}
+  Arrives at ${moment(pred.ts).format('LT')}
+  <br>
+  Heading: ${vehicle.hdg}`;
 
   marker.on('mouseover', function(e) {
     //open popup;
